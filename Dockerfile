@@ -1,4 +1,4 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=python:3.9-alpine # or any other alpine based image.
 FROM $BUILD_FROM
 
 # Install required system packages
