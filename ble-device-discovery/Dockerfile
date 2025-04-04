@@ -1,19 +1,21 @@
-ARG BUILD_FROM=python:3.9-alpine # or any other alpine based image.
+ARG BUILD_FROM
 FROM $BUILD_FROM
 
 # Install required system packages
 RUN apk add --no-cache \
     python3 \
-    py3-pip
+    py3-pip \
+    python3-dev \
+    gcc \
+    musl-dev
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir \
-    uuid \
+# Upgrade pip and install dependencies
+RUN pip3 install --upgrade pip && \
+    pip3 install --no-cache-dir \
     requests
 
-# Copy your script
-COPY ble_discovery.py /
-COPY run.sh /
+# Copy root filesystem
+COPY rootfs /
 RUN chmod a+x /run.sh
 
 CMD [ "/run.sh" ]

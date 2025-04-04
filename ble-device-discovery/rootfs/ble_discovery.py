@@ -8,8 +8,8 @@ import json
 import logging
 import os
 import time
-import uuid
 from datetime import datetime
+import uuid  # This is a built-in module, no need for separate installation
 
 import requests
 
