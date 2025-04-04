@@ -1,15 +1,11 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install required system packages
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    python3-dev \
-    gcc \
-    musl-dev
+# Debug information
+RUN echo "Python version:" && python3 --version
+RUN echo "Pip version:" && pip3 --version
 
-# Install the requests package directly without upgrading pip
+# Try installing without upgrading pip
 RUN pip3 install --no-cache-dir requests
 
 # Copy root filesystem
