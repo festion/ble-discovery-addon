@@ -1,23 +1,22 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install required system packages and Python dependencies
+# Install required system packages
 RUN apk add --no-cache \
     python3 \
     py3-pip \
     python3-dev \
     gcc \
-    musl-dev \
-    py3-requests
+    musl-dev
 
-# Additional Python package installation with error handling
-RUN pip3 install --upgrade pip && \
-    pip3 install --no-cache-dir \
-    requests \
-    || (echo "pip install failed" && exit 1)
+# Install Python packages separately with error handling
+RUN pip3 install --upgrade pip
+RUN pip3 install --no-cache-dir requests
 
 # Copy root filesystem
 COPY rootfs /
+
+# Make scripts executable
 RUN chmod a+x /run.sh
 
 CMD [ "/run.sh" ]
