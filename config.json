@@ -3,13 +3,7 @@
     "version": "1.0.0",
     "slug": "ble_device_discovery",
     "description": "Discover and manage Bluetooth Low Energy devices",
-    "arch": [
-        "armhf",
-        "armv7",
-        "aarch64", 
-        "amd64",
-        "i386"
-    ],
+    "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
     "startup": "application",
     "boot": "auto",
     "options": {
@@ -20,14 +14,8 @@
         "log_level": "list(trace|debug|info|warning|error|fatal)",
         "scan_interval": "int(10,3600)"
     },
-    "map": [
-        "config:rw"
-    ],
-    "ports": {
-        "80/tcp": null
-    },
+    "map": ["config:rw"],
     "hassio_api": true,
     "hassio_role": "admin",
-    "homeassistant_api": true,
-    "image": "yourusername/ble-discovery-{arch}"
+    "homeassistant_api": true
 }
