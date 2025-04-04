@@ -9,8 +9,7 @@ RUN apk add --no-cache \
     gcc \
     musl-dev
 
-# Install Python packages separately with error handling
-RUN pip3 install --upgrade pip
+# Install the requests package directly without upgrading pip
 RUN pip3 install --no-cache-dir requests
 
 # Copy root filesystem
