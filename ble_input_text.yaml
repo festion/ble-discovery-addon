@@ -1,14 +1,5 @@
-# BLE Discovery Input Text Helpers
-# This file will be appended to input_text.yaml if needed
-
-discovered_ble_devices:
-  name: Discovered BLE Devices
-  icon: mdi:bluetooth-settings
-  max: 1024
-  initial: "{}"
-  
-selected_ble_device:
-  name: Selected BLE Device
-  icon: mdi:bluetooth-connect
-  max: 100
-  initial: ""
+input_text:
+  discovered_ble_devices:
+    name: Discovered BLE Devices
+    initial: ''
+    max: 255
