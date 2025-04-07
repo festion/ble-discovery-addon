@@ -7,10 +7,9 @@ ENV LANG C.UTF-8
 # Install dependencies
 RUN apk add --no-cache jq python3 py3-pip curl
 
-# Install bashio manually from GitHub (correct method)
-RUN curl -sSL https://github.com/hassio-addons/bashio/archive/master.tar.gz | tar -xz \
-    && mv bashio-master /usr/lib/bashio \
-    && ln -s /usr/lib/bashio/bashio /usr/bin/bashio
+# Install bashio library
+RUN mkdir -p /usr/lib/bashio \
+ && curl -sSL https://raw.githubusercontent.com/hassio-addons/bashio/main/bashio.sh -o /usr/lib/bashio/bashio.sh
 
 # Copy your scripts and files
 COPY run.sh /run.sh

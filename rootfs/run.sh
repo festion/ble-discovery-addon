@@ -1,4 +1,5 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/with-contenv bash
+source /usr/lib/bashio/bashio.sh
 
 # Get configuration options
 LOG_LEVEL=$(bashio::config 'log_level')
