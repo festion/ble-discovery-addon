@@ -1,24 +1,25 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Set locale
+# Set environment
 ENV LANG C.UTF-8
 
-# Install bashio, jq, Python, and pip
-RUN apk add --no-cache \
-    bashio \
-    jq \
-    python3 \
-    py3-pip
+# Install dependencies
+RUN apk add --no-cache jq python3 py3-pip curl
 
-# Copy add-on scripts and config files
+# Install bashio manually from GitHub (correct method)
+RUN curl -sSL https://github.com/hassio-addons/bashio/archive/master.tar.gz | tar -xz \
+    && mv bashio-master /usr/lib/bashio \
+    && ln -s /usr/lib/bashio/bashio /usr/bin/bashio
+
+# Copy your scripts and files
 COPY run.sh /run.sh
 COPY ble_discovery.py /ble_discovery.py
 COPY btle_dashboard.yaml /btle_dashboard.yaml
 COPY ble_input_text.yaml /ble_input_text.yaml
 
-# Make the startup script executable
+# Make the script executable
 RUN chmod a+x /run.sh
 
-# Set entrypoint
+# Entrypoint
 CMD [ "/run.sh" ]
