@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bash
+#!/bin/bash
 source /usr/lib/bashio/bashio.sh
 
 # Get configuration options

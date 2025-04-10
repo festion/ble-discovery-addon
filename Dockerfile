@@ -5,6 +5,7 @@ ENV LANG C.UTF-8
 
 # Install required packages
 RUN apk add --no-cache \
+    bash \
     jq \
     python3 \
     py3-pip \
@@ -27,4 +28,9 @@ COPY ble_input_text.yaml /ble_input_text.yaml
 
 RUN chmod a+x /run.sh
 
-CMD [ "/run.sh" ]
+# Make sure bash is the shell used
+SHELL ["/bin/bash", "-c"]
+
+# Set the entry point
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["/run.sh"]

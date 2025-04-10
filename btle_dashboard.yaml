@@ -58,8 +58,36 @@ cards:
       - type: entities
         title: Device Discovery
         entities:
-          - entity: button.bluetooth_scan
-            name: Scan for BLE Devices
+          - type: conditional
+            conditions:
+              - entity: input_button.bluetooth_scan
+                state_not: "unavailable"
+            row:
+              entity: input_button.bluetooth_scan
+              name: Scan for BLE Devices
+              icon: mdi:bluetooth-search
+          - type: conditional
+            conditions:
+              - entity: button.bluetooth_scan
+                state_not: "unavailable"
+              - entity: input_button.bluetooth_scan
+                state: "unavailable"
+            row:
+              entity: button.bluetooth_scan
+              name: Scan for BLE Devices
+              icon: mdi:bluetooth-search
+          - type: conditional
+            conditions:
+              - entity: script.bluetooth_scan
+                state_not: "unavailable"
+              - entity: button.bluetooth_scan
+                state: "unavailable"
+              - entity: input_button.bluetooth_scan
+                state: "unavailable"
+            row:
+              entity: script.bluetooth_scan
+              name: Scan for BLE Devices
+              icon: mdi:bluetooth-search
           - entity: input_text.discovered_ble_devices
             name: Discovered Devices (JSON)
           - type: divider

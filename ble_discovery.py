@@ -267,7 +267,8 @@ def create_ble_gateway_sensor():
         
 def register_bluetooth_scan_button():
     """
-    Register a button entity for triggering Bluetooth scans.
+    Register button entities for triggering Bluetooth scans.
+    Tries multiple approaches to ensure at least one works.
     """
     try:
         headers = {
@@ -275,7 +276,31 @@ def register_bluetooth_scan_button():
             "Content-Type": "application/json"
         }
         
-        # Check if the button entity exists
+        # Check if any button entity exists
+        button_created = False
+        
+        # Try creating an input_button entity first (most reliable)
+        try:
+            # Try input_button first
+            input_button_data = {
+                "entity_id": "input_button.bluetooth_scan",
+                "name": "Bluetooth Scan",
+                "icon": "mdi:bluetooth-search"
+            }
+            
+            input_response = requests.post(
+                "http://supervisor/core/api/services/input_button/create",
+                headers=headers,
+                json=input_button_data
+            )
+            
+            if input_response.status_code >= 200 and input_response.status_code < 300:
+                logging.info("Created input_button.bluetooth_scan successfully")
+                button_created = True
+        except Exception as e:
+            logging.warning(f"Error creating input_button: {e}")
+        
+        # Check if button.bluetooth_scan exists and create if not
         response = requests.get(
             "http://supervisor/core/api/states/button.bluetooth_scan",
             headers=headers
@@ -283,7 +308,7 @@ def register_bluetooth_scan_button():
         
         if response.status_code == 404:
             # Try to register a button
-            logging.info("Registering Bluetooth scan button")
+            logging.info("Registering button.bluetooth_scan")
             
             # First try to call the button.create service
             create_data = {
@@ -320,10 +345,41 @@ def register_bluetooth_scan_button():
                 
                 if state_response.status_code >= 200 and state_response.status_code < 300:
                     logging.info("Bluetooth scan button registered via state update")
+                    button_created = True
                 else:
                     logging.error(f"Error registering button via state: {state_response.status_code}")
             else:
                 logging.info("Bluetooth scan button registered via service call")
+                button_created = True
+        else:
+            logging.info("button.bluetooth_scan already exists")
+            button_created = True
+                
+        # Create a script as a fallback
+        if not button_created:
+            logging.info("Attempting to create a script for Bluetooth scanning")
+            
+            script_data = {
+                "entity_id": "script.bluetooth_scan",
+                "sequence": [
+                    {
+                        "service": "bluetooth.start_discovery"
+                    }
+                ],
+                "icon": "mdi:bluetooth-search",
+                "name": "Bluetooth Scan"
+            }
+            
+            script_response = requests.post(
+                "http://supervisor/core/api/services/script/create",
+                headers=headers,
+                json=script_data
+            )
+            
+            if script_response.status_code >= 200 and script_response.status_code < 300:
+                logging.info("Created script.bluetooth_scan as fallback")
+            else:
+                logging.error(f"Failed to create script: {script_response.status_code}")
                 
     except Exception as e:
         logging.error(f"Error registering Bluetooth scan button: {e}")
@@ -460,13 +516,16 @@ def process_ble_gateway_data(gateway_devices):
 
 def trigger_bluetooth_scan():
     """
-    Trigger a Bluetooth scan using available methods.
+    Trigger a Bluetooth scan using all available methods.
+    Tries multiple approaches to ensure at least one works.
     """
     try:
         headers = {
             "Authorization": f"Bearer {os.environ.get('SUPERVISOR_TOKEN', '')}",
             "Content-Type": "application/json"
         }
+        
+        success = False
         
         # Try to use the bluetooth integration's scan service first
         try:
@@ -478,26 +537,59 @@ def trigger_bluetooth_scan():
             
             if scan_response.status_code >= 200 and scan_response.status_code < 300:
                 logging.info("Triggered bluetooth.start_discovery service")
-                return True
+                success = True
                 
         except Exception as e:
             logging.warning(f"Error triggering bluetooth.start_discovery: {e}")
         
-        # Try the scan using our button as a fallback
-        payload = {
-            "entity_id": "button.bluetooth_scan"
-        }
+        # Try input_button if available
+        if not success:
+            try:
+                input_button_response = requests.post(
+                    "http://supervisor/core/api/services/input_button/press",
+                    headers=headers,
+                    json={"entity_id": "input_button.bluetooth_scan"}
+                )
+                
+                if input_button_response.status_code >= 200 and input_button_response.status_code < 300:
+                    logging.info("Triggered input_button.bluetooth_scan")
+                    success = True
+            except Exception as e:
+                logging.warning(f"Error triggering input_button.bluetooth_scan: {e}")
         
-        response = requests.post(
-            "http://supervisor/core/api/services/button/press",
-            headers=headers,
-            json=payload
-        )
+        # Try regular button if available
+        if not success:
+            try:
+                button_response = requests.post(
+                    "http://supervisor/core/api/services/button/press",
+                    headers=headers,
+                    json={"entity_id": "button.bluetooth_scan"}
+                )
+                
+                if button_response.status_code >= 200 and button_response.status_code < 300:
+                    logging.info("Triggered button.bluetooth_scan")
+                    success = True
+            except Exception as e:
+                logging.warning(f"Error triggering button.bluetooth_scan: {e}")
+                
+        # Try script if available
+        if not success:
+            try:
+                script_response = requests.post(
+                    "http://supervisor/core/api/services/script/turn_on",
+                    headers=headers,
+                    json={"entity_id": "script.bluetooth_scan"}
+                )
+                
+                if script_response.status_code >= 200 and script_response.status_code < 300:
+                    logging.info("Triggered script.bluetooth_scan")
+                    success = True
+            except Exception as e:
+                logging.warning(f"Error triggering script.bluetooth_scan: {e}")
         
-        if response.status_code < 200 or response.status_code >= 300:
-            logging.warning(f"Error triggering button.bluetooth_scan: {response.status_code} - {response.text}")
-            
-            # As a final fallback, simulate a scan with shell commands
+        # As a final fallback, simulate a scan with shell commands
+        if not success:
+            logging.warning("All scan triggers failed, using simulated mode")
             simulated_devices = simulate_bluetooth_scan()
             if simulated_devices:
                 # Create BLE gateway sensor and update it with simulated devices
@@ -516,12 +608,9 @@ def trigger_bluetooth_scan():
                     json=sensor_data
                 )
                 logging.info("Updated BLE gateway sensor with simulated devices")
-                return True
+                success = True
                 
-            return False
-            
-        logging.info("Triggered button.bluetooth_scan")
-        return True
+        return success
         
     except Exception as e:
         logging.error(f"Error triggering Bluetooth scan: {e}")
