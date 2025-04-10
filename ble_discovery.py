@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+import sys
 import time
 from datetime import datetime
 import uuid
@@ -23,10 +24,59 @@ def setup_logging(log_level):
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {log_level}')
     
-    logging.basicConfig(
-        level=numeric_level,
-        format='%(asctime)s - BLE Discovery - %(levelname)s - %(message)s'
-    )
+    # Create logs directory if it doesn't exist
+    log_dir = "/config/ble_discovery/logs"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+    
+    # Generate log filename with timestamp
+    log_filename = os.path.join(log_dir, f"ble_discovery_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    
+    # Configure file handler for detailed logging
+    file_handler = logging.FileHandler(log_filename)
+    file_handler.setLevel(numeric_level)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s - BLE Discovery - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+    ))
+    
+    # Configure console handler for basic logging
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(numeric_level)
+    console_handler.setFormatter(logging.Formatter(
+        '%(asctime)s - BLE Discovery - %(levelname)s - %(message)s'
+    ))
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(numeric_level)
+    
+    # Remove any existing handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    # Add the handlers to the logger
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    # Create a symlink to the latest log file
+    latest_log_link = os.path.join(log_dir, "latest.log")
+    try:
+        if os.path.exists(latest_log_link):
+            os.remove(latest_log_link)
+        os.symlink(log_filename, latest_log_link)
+    except Exception as e:
+        print(f"Error creating symlink to latest log: {e}")
+        
+    # Rotate logs (keep only last 10)
+    try:
+        log_files = sorted([f for f in os.listdir(log_dir) if f.startswith("ble_discovery_") and f.endswith(".log")])
+        if len(log_files) > 10:
+            for old_file in log_files[:-10]:
+                os.remove(os.path.join(log_dir, old_file))
+    except Exception as e:
+        print(f"Error rotating logs: {e}")
+        
+    logging.info("Logging initialized with level %s to %s", log_level, log_filename)
 
 def load_discoveries():
     """Load previously discovered devices."""
@@ -675,11 +725,71 @@ def setup_required_entities():
     for entity_id in required_entities:
         check_input_text_exists(entity_id)
 
+def collect_system_diagnostics():
+    """
+    Collect system diagnostic information to help with troubleshooting.
+    """
+    diagnostics = {
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.3.1",  # Make sure to update this when changing versions
+        "python_version": ".".join(map(str, sys.version_info[:3])),
+        "platform": sys.platform,
+        "environment": {}
+    }
+    
+    # Check Bluetooth availability
+    try:
+        import subprocess
+        bt_output = subprocess.run(["command", "-v", "bluetoothctl"], 
+                             shell=True, capture_output=True, text=True)
+        diagnostics["bluetoothctl_available"] = bt_output.returncode == 0
+        
+        if diagnostics["bluetoothctl_available"]:
+            version_output = subprocess.run(["bluetoothctl", "--version"], 
+                                   capture_output=True, text=True)
+            diagnostics["bluetoothctl_version"] = version_output.stdout.strip() if version_output.returncode == 0 else "Error getting version"
+    except Exception as e:
+        diagnostics["bluetoothctl_error"] = str(e)
+    
+    # Check for Bluetooth adapters
+    try:
+        hci_output = subprocess.run(["ls", "/sys/class/bluetooth"], 
+                              shell=True, capture_output=True, text=True)
+        diagnostics["bluetooth_adapters"] = hci_output.stdout.strip().split() if hci_output.returncode == 0 else []
+    except Exception as e:
+        diagnostics["bluetooth_adapters_error"] = str(e)
+    
+    # Get environment variables (excluding sensitive ones)
+    for key, value in os.environ.items():
+        if not any(sensitive in key.lower() for sensitive in ["token", "key", "secret", "pass", "auth"]):
+            diagnostics["environment"][key] = value
+    
+    # Save diagnostics to file
+    try:
+        diag_dir = "/config/ble_discovery/diagnostics"
+        if not os.path.exists(diag_dir):
+            os.makedirs(diag_dir, exist_ok=True)
+            
+        diag_filename = os.path.join(diag_dir, f"diagnostics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+        with open(diag_filename, 'w') as f:
+            json.dump(diagnostics, f, indent=2)
+            
+        logging.info(f"Diagnostics saved to {diag_filename}")
+        return diagnostics
+    except Exception as e:
+        logging.error(f"Error saving diagnostics: {e}")
+        return diagnostics
+
 def main(log_level, scan_interval, gateway_topic=DEFAULT_GATEWAY_TOPIC):
     """Main discovery loop."""
     setup_logging(log_level)
     
     logging.info(f"Enhanced BLE Discovery Add-on started. Scanning every {scan_interval} seconds.")
+    
+    # Collect diagnostic information
+    diagnostics = collect_system_diagnostics()
+    logging.info(f"System diagnostics: Python {diagnostics.get('python_version')}, " 
+                f"Bluetooth adapters: {len(diagnostics.get('bluetooth_adapters', []))}")
     
     # Register our button entity
     register_bluetooth_scan_button()

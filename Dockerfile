@@ -9,9 +9,7 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     curl \
-    unzip \
-    bluez \
-    bluez-tools
+    unzip
 
 RUN mkdir -p /usr/lib/bashio \
  && curl -sSL https://github.com/hassio-addons/bashio/archive/refs/heads/main.zip -o /tmp/bashio.zip \

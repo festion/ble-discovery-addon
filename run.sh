@@ -13,6 +13,18 @@ mkdir -p /config/ble_discovery
 if [ ! -f "/.dependencies_installed" ]; then
     bashio::log.info "Installing additional dependencies..."
     pip3 install --no-cache-dir requests
+    
+    # Try to install Bluetooth packages if needed and available
+    if command -v apk >/dev/null 2>&1; then
+        bashio::log.info "Trying to install Bluetooth tools if available..."
+        apk add --no-cache bluez bluez-deprecated || bashio::log.warning "Could not install Bluetooth packages, using fallback mode"
+    elif command -v apt-get >/dev/null 2>&1; then
+        bashio::log.info "Detected Debian/Ubuntu, trying to install Bluetooth tools if available..."
+        apt-get update && apt-get install -y --no-install-recommends bluez || bashio::log.warning "Could not install Bluetooth packages, using fallback mode"
+    else
+        bashio::log.warning "No package manager detected for Bluetooth tools, using fallback mode"
+    fi
+    
     touch "/.dependencies_installed"
 fi
 
