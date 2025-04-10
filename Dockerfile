@@ -26,11 +26,13 @@ COPY ble_scripts.yaml /ble_scripts.yaml
 COPY btle_dashboard.yaml /btle_dashboard.yaml
 COPY ble_input_text.yaml /ble_input_text.yaml
 
-RUN chmod a+x /run.sh
+# Fix any potential line ending issues
+RUN sed -i 's/\r$//' /run.sh && \
+    chmod a+x /run.sh
 
 # Make sure bash is the shell used
 SHELL ["/bin/bash", "-c"]
 
 # Set the entry point
-ENTRYPOINT ["/bin/bash", "-c"]
+ENTRYPOINT ["/bin/bash"]
 CMD ["/run.sh"]
