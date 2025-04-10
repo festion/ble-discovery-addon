@@ -47,6 +47,41 @@ if [ ! -f "/config/input_text.yaml" ] || ! grep -q "discovered_ble_devices" "/co
         # Create new file
         cp /ble_input_text.yaml /config/input_text.yaml
     fi
+    
+    # Check if configuration.yaml is available and update it
+    if [ -f "/config/configuration.yaml" ]; then
+        bashio::log.info "Adding input helper references to configuration.yaml..."
+        
+        # Check if input_text: is already in configuration.yaml
+        if ! grep -q "^input_text:" "/config/configuration.yaml"; then
+            # Add include for input_text.yaml
+            echo "" >> /config/configuration.yaml
+            echo "# Added by BLE Discovery Add-on" >> /config/configuration.yaml
+            echo "input_text: !include input_text.yaml" >> /config/configuration.yaml
+        fi
+        
+        # Check if input_button: is already in configuration.yaml
+        if ! grep -q "^input_button:" "/config/configuration.yaml" && ! grep -q "input_button: !include" "/config/configuration.yaml"; then
+            # Add input_button directly
+            echo "input_button:" >> /config/configuration.yaml
+            echo "  bluetooth_scan:" >> /config/configuration.yaml
+            echo "    name: Bluetooth Scan" >> /config/configuration.yaml
+            echo "    icon: mdi:bluetooth-search" >> /config/configuration.yaml
+        fi
+        
+        # Check if input_select: is already in configuration.yaml
+        if ! grep -q "^input_select:" "/config/configuration.yaml" && ! grep -q "input_select: !include" "/config/configuration.yaml"; then
+            echo "input_select: !include input_text.yaml" >> /config/configuration.yaml
+        fi
+        
+        # Check if input_number: is already in configuration.yaml
+        if ! grep -q "^input_number:" "/config/configuration.yaml" && ! grep -q "input_number: !include" "/config/configuration.yaml"; then
+            echo "input_number: !include input_text.yaml" >> /config/configuration.yaml
+        fi
+        
+        # Add a restart notification
+        bashio::log.warning "Configuration updated. A Home Assistant restart may be required for all components to appear."
+    fi
 fi
 
 # Install scripts if they don't exist
