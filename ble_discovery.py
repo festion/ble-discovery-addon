@@ -285,7 +285,11 @@ def register_bluetooth_scan_button():
             input_button_data = {
                 "entity_id": "input_button.bluetooth_scan",
                 "name": "Bluetooth Scan",
-                "icon": "mdi:bluetooth-search"
+                "icon": "mdi:bluetooth-search",
+                "attributes": {
+                    "friendly_name": "Bluetooth Scan",
+                    "icon": "mdi:bluetooth-search"
+                }
             }
             
             input_response = requests.post(
@@ -297,6 +301,24 @@ def register_bluetooth_scan_button():
             if input_response.status_code >= 200 and input_response.status_code < 300:
                 logging.info("Created input_button.bluetooth_scan successfully")
                 button_created = True
+                
+                # Set the icon directly in the entity state
+                try:
+                    state_data = {
+                        "state": "off",
+                        "attributes": {
+                            "friendly_name": "Bluetooth Scan",
+                            "icon": "mdi:bluetooth-search"
+                        }
+                    }
+                    requests.post(
+                        "http://supervisor/core/api/states/input_button.bluetooth_scan",
+                        headers=headers,
+                        json=state_data
+                    )
+                    logging.info("Updated input_button.bluetooth_scan icon")
+                except Exception as e:
+                    logging.warning(f"Error setting input_button icon: {e}")
         except Exception as e:
             logging.warning(f"Error creating input_button: {e}")
         
@@ -820,7 +842,7 @@ def collect_system_diagnostics():
     """
     diagnostics = {
         "timestamp": datetime.now().isoformat(),
-        "version": "1.3.1",  # Make sure to update this when changing versions
+        "version": "1.3.3",  # Make sure to update this when changing versions
         "python_version": ".".join(map(str, sys.version_info[:3])),
         "platform": sys.platform,
         "environment": {}
