@@ -54,10 +54,33 @@ if [ ! -f "/config/input_text.yaml" ] || ! grep -q "discovered_ble_devices" "/co
         
         # Check if input_text: is already in configuration.yaml
         if ! grep -q "^input_text:" "/config/configuration.yaml"; then
-            # Add include for input_text.yaml
+            # Add input_text entries directly
             echo "" >> /config/configuration.yaml
             echo "# Added by BLE Discovery Add-on" >> /config/configuration.yaml
-            echo "input_text: !include input_text.yaml" >> /config/configuration.yaml
+            echo "input_text:" >> /config/configuration.yaml
+            echo "  discovered_ble_devices:" >> /config/configuration.yaml
+            echo "    name: Discovered BLE Devices" >> /config/configuration.yaml
+            echo "    initial: '{}'" >> /config/configuration.yaml
+            echo "    max: 1024" >> /config/configuration.yaml
+            echo "    icon: mdi:bluetooth-transfer" >> /config/configuration.yaml
+            echo "" >> /config/configuration.yaml
+            echo "  selected_ble_device:" >> /config/configuration.yaml
+            echo "    name: Selected BLE Device" >> /config/configuration.yaml
+            echo "    initial: ''" >> /config/configuration.yaml
+            echo "    max: 255" >> /config/configuration.yaml
+            echo "    icon: mdi:bluetooth" >> /config/configuration.yaml
+            echo "" >> /config/configuration.yaml
+            echo "  ble_device_name:" >> /config/configuration.yaml
+            echo "    name: BLE Device Name" >> /config/configuration.yaml
+            echo "    initial: ''" >> /config/configuration.yaml
+            echo "    max: 255" >> /config/configuration.yaml
+            echo "    icon: mdi:rename" >> /config/configuration.yaml
+            echo "" >> /config/configuration.yaml
+            echo "  ble_device_icon:" >> /config/configuration.yaml
+            echo "    name: BLE Device Icon" >> /config/configuration.yaml
+            echo "    initial: 'mdi:bluetooth'" >> /config/configuration.yaml
+            echo "    max: 255" >> /config/configuration.yaml
+            echo "    icon: mdi:pencil" >> /config/configuration.yaml
         fi
         
         # Check if input_button: is already in configuration.yaml
@@ -71,12 +94,29 @@ if [ ! -f "/config/input_text.yaml" ] || ! grep -q "discovered_ble_devices" "/co
         
         # Check if input_select: is already in configuration.yaml
         if ! grep -q "^input_select:" "/config/configuration.yaml" && ! grep -q "input_select: !include" "/config/configuration.yaml"; then
-            echo "input_select: !include input_text.yaml" >> /config/configuration.yaml
+            echo "# These entries added by BLE Discovery Add-on" >> /config/configuration.yaml
+            echo "input_select:" >> /config/configuration.yaml
+            echo "  ble_device_type:" >> /config/configuration.yaml
+            echo "    name: BLE Device Type" >> /config/configuration.yaml
+            echo "    options:" >> /config/configuration.yaml
+            echo "      - presence" >> /config/configuration.yaml
+            echo "      - temperature" >> /config/configuration.yaml
+            echo "      - other" >> /config/configuration.yaml
+            echo "    initial: presence" >> /config/configuration.yaml
+            echo "    icon: mdi:devices" >> /config/configuration.yaml
         fi
         
         # Check if input_number: is already in configuration.yaml
         if ! grep -q "^input_number:" "/config/configuration.yaml" && ! grep -q "input_number: !include" "/config/configuration.yaml"; then
-            echo "input_number: !include input_text.yaml" >> /config/configuration.yaml
+            echo "input_number:" >> /config/configuration.yaml
+            echo "  ble_rssi_threshold:" >> /config/configuration.yaml
+            echo "    name: BLE RSSI Threshold" >> /config/configuration.yaml
+            echo "    min: -100" >> /config/configuration.yaml
+            echo "    max: -40" >> /config/configuration.yaml
+            echo "    step: 1" >> /config/configuration.yaml
+            echo "    initial: -80" >> /config/configuration.yaml
+            echo "    unit_of_measurement: dBm" >> /config/configuration.yaml
+            echo "    icon: mdi:signal" >> /config/configuration.yaml
         fi
         
         # Add a restart notification
