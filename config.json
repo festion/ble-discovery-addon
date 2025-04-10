@@ -1,6 +1,6 @@
 {
     "name": "Enhanced BLE Device Discovery",
-    "version": "1.2.9",
+    "version": "1.3.0",
     "slug": "enhanced_ble_device_discovery",
     "description": "Discover and manage Bluetooth Low Energy devices with a user-friendly dashboard",
     "url": "https://github.com/festion/ble-discovery-addon",

@@ -3,7 +3,15 @@ FROM ghcr.io/hassio-addons/base:12.2.7
 
 ENV LANG C.UTF-8
 
-RUN apk add --no-cache jq python3 py3-pip curl unzip
+# Install required packages
+RUN apk add --no-cache \
+    jq \
+    python3 \
+    py3-pip \
+    curl \
+    unzip \
+    bluez \
+    bluez-tools
 
 RUN mkdir -p /usr/lib/bashio \
  && curl -sSL https://github.com/hassio-addons/bashio/archive/refs/heads/main.zip -o /tmp/bashio.zip \
