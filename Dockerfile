@@ -11,8 +11,11 @@ RUN mkdir -p /usr/lib/bashio \
  && mv /tmp/bashio-main/lib/* /usr/lib/bashio/ \
  && rm -rf /tmp/bashio.zip /tmp/bashio-main
 
-COPY run.sh /run.sh
-COPY ble_discovery.py /ble_discovery.py
+# Copy root filesystem
+COPY rootfs /
+
+# Copy additional files
+COPY ble_scripts.yaml /ble_scripts.yaml
 COPY btle_dashboard.yaml /btle_dashboard.yaml
 COPY ble_input_text.yaml /ble_input_text.yaml
 

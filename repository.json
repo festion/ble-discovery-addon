@@ -1,5 +1,5 @@
 {
-    "name": "BLE Device Discovery Add-on",
-    "url": "https://github.com/yourusername/hassio-ble-discovery-addon",
-    "maintainer": "Your Name <your.email@example.com>"
+    "name": "Enhanced BLE Device Discovery Add-on",
+    "url": "https://github.com/festion/ble-discovery-addon",
+    "maintainer": "festion"
 }

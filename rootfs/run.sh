@@ -37,6 +37,13 @@ if [ ! -f "/config/input_text.yaml" ] || ! grep -q "discovered_ble_devices" "/co
     fi
 fi
 
+# Install scripts if they don't exist
+if [ ! -f "/config/scripts/ble_scripts.yaml" ]; then
+    bashio::log.info "Installing BLE scripts..."
+    mkdir -p /config/scripts
+    cp /ble_scripts.yaml /config/scripts/
+fi
+
 # Announce startup
 bashio::log.info "Starting Enhanced BLE Device Discovery..."
 
