@@ -9,7 +9,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import requests
 
@@ -508,16 +508,364 @@ def process_ble_gateway_data(gateway_devices):
                 manufacturer = "Unknown"
                 device_type = "Unknown"
                 
-                # Simple heuristics for device type based on MAC prefix or adv data
-                if mac.upper().startswith(("00:0D:6F", "AC:23:3F", "B0:49:5F")):
-                    manufacturer = "Google"
-                    device_type = "Google Device"
-                elif mac.upper().startswith(("00:17:88", "EC:B5:FA")):
-                    manufacturer = "Philips"
-                    device_type = "Philips Hue"
-                elif mac.upper().startswith(("58:D5:6E", "A4:C1:38")):
-                    manufacturer = "Apple"
-                    device_type = "Apple Device"
+                # Enhanced device identification based on MAC prefix
+                # MAC address prefixes database
+                MANUFACTURERS = {
+                    # Apple devices
+                    "00:03:93": "Apple",
+                    "00:0A:27": "Apple",
+                    "00:0A:95": "Apple",
+                    "00:0D:93": "Apple",
+                    "00:11:24": "Apple",
+                    "00:14:51": "Apple",
+                    "00:16:CB": "Apple",
+                    "00:17:F2": "Apple",
+                    "00:19:E3": "Apple",
+                    "00:1C:B3": "Apple",
+                    "00:1D:4F": "Apple",
+                    "00:1E:52": "Apple",
+                    "00:1E:C2": "Apple",
+                    "00:1F:5B": "Apple",
+                    "00:1F:F3": "Apple",
+                    "00:21:E9": "Apple",
+                    "00:22:41": "Apple",
+                    "00:23:12": "Apple",
+                    "00:23:32": "Apple",
+                    "00:23:6C": "Apple",
+                    "00:23:DF": "Apple",
+                    "00:24:36": "Apple",
+                    "00:25:00": "Apple",
+                    "00:25:BC": "Apple",
+                    "00:26:08": "Apple",
+                    "00:26:4A": "Apple",
+                    "00:26:B0": "Apple",
+                    "00:26:BB": "Apple",
+                    "00:30:65": "Apple",
+                    "00:3E:E1": "Apple",
+                    "00:50:E4": "Apple",
+                    "00:56:CD": "Apple",
+                    "00:61:71": "Apple",
+                    "00:6D:52": "Apple",
+                    "00:88:65": "Apple",
+                    "00:B3:62": "Apple",
+                    "00:C6:10": "Apple",
+                    "00:DB:70": "Apple",
+                    "00:F4:B9": "Apple",
+                    "04:0C:CE": "Apple",
+                    "04:15:52": "Apple",
+                    "04:1E:64": "Apple",
+                    "04:26:65": "Apple",
+                    "04:4B:ED": "Apple",
+                    "04:52:F3": "Apple",
+                    "04:54:53": "Apple",
+                    "04:69:F8": "Apple",
+                    "04:D3:CF": "Apple",
+                    "04:DB:56": "Apple",
+                    "04:E5:36": "Apple",
+                    "04:F1:3E": "Apple",
+                    "04:F7:E4": "Apple",
+                    "08:00:07": "Apple",
+                    "08:66:98": "Apple",
+                    "08:6D:41": "Apple",
+                    "08:70:45": "Apple",
+                    "08:74:02": "Apple",
+                    "08:F4:AB": "Apple",
+                    "0C:15:39": "Apple",
+                    "0C:30:21": "Apple",
+                    "0C:3E:9F": "Apple",
+                    "0C:4D:E9": "Apple",
+                    "0C:51:01": "Apple",
+                    "0C:74:C2": "Apple",
+                    "0C:77:1A": "Apple",
+                    "0C:BC:9F": "Apple",
+                    "0C:D7:46": "Apple",
+                    "10:1C:0C": "Apple",
+                    "10:40:F3": "Apple",
+                    "10:41:7F": "Apple",
+                    "10:93:E9": "Apple",
+                    "10:9A:DD": "Apple",
+                    "10:DD:B1": "Apple",
+                    "14:10:9F": "Apple",
+                    "14:20:5E": "Apple",
+                    "14:5A:05": "Apple",
+                    "14:8F:C6": "Apple",
+                    "14:99:E2": "Apple",
+                    "14:BD:61": "Apple",
+                    "18:20:32": "Apple",
+                    "18:34:51": "Apple",
+                    "18:65:90": "Apple",
+                    "18:81:0E": "Apple",
+                    "18:9E:FC": "Apple",
+                    "18:AF:61": "Apple",
+                    "18:AF:8F": "Apple",
+                    "18:EE:69": "Apple",
+                    "18:F1:D8": "Apple",
+                    "18:F6:43": "Apple",
+                    "1C:1A:C0": "Apple",
+                    "1C:36:BB": "Apple",
+                    "1C:5C:F2": "Apple",
+                    "1C:91:48": "Apple",
+                    "1C:9E:46": "Apple",
+                    "1C:AB:A7": "Apple",
+                    "1C:AF:F7": "Apple",
+                    "1C:E6:2B": "Apple",
+                    "20:3C:AE": "Apple",
+                    "20:76:8F": "Apple",
+                    "20:78:F0": "Apple",
+                    "20:7D:74": "Apple",
+                    "20:9B:CD": "Apple",
+                    "20:A2:E4": "Apple",
+                    "20:AB:37": "Apple",
+                    "20:C9:D0": "Apple",
+                    "20:EE:28": "Apple",
+                    "24:1E:EB": "Apple",
+                    "24:24:0E": "Apple",
+                    "24:5B:A7": "Apple",
+                    "24:62:76": "Apple",
+                    "24:A0:74": "Apple",
+                    "24:A2:E1": "Apple",
+                    "24:AB:81": "Apple",
+                    "24:E3:14": "Apple",
+                    "24:F0:94": "Apple",
+                    "24:F6:77": "Apple",
+                    "28:37:37": "Apple",
+                    "28:39:26": "Apple",
+                    "28:3C:E4": "Apple",
+                    "28:5A:EB": "Apple",
+                    "28:6A:B8": "Apple",
+                    "28:6A:BA": "Apple",
+                    "28:6A:BC": "Apple",
+                    "28:CF:DA": "Apple",
+                    "28:CF:E9": "Apple",
+                    "28:E0:2C": "Apple",
+                    "28:E1:4C": "Apple",
+                    "28:E7:CF": "Apple",
+                    "28:F0:76": "Apple",
+                    "28:FF:3C": "Apple",
+                    "2C:1F:23": "Apple",
+                    "2C:20:0B": "Apple",
+                    "2C:33:61": "Apple",
+                    "2C:61:F6": "Apple",
+                    "2C:B4:3A": "Apple",
+                    "2C:BE:08": "Apple",
+                    "2C:F0:A2": "Apple",
+                    "2C:F0:EE": "Apple",
+                    "30:10:E4": "Apple",
+                    "30:35:AD": "Apple",
+                    "30:63:6B": "Apple",
+                    "30:90:AB": "Apple",
+                    "30:A8:DB": "Apple",
+                    "30:F7:C5": "Apple",
+                    "34:08:BC": "Apple",
+                    "34:12:98": "Apple",
+                    "34:15:9E": "Apple",
+                    "34:36:3B": "Apple",
+                    "34:51:C9": "Apple",
+                    "34:A3:95": "Apple",
+                    "34:AB:37": "Apple",
+                    "34:C0:59": "Apple",
+                    "34:E2:FD": "Apple",
+                    "38:0F:4A": "Apple",
+                    "38:48:4C": "Apple",
+                    "58:D5:6E": "Apple",
+                    "A4:C1:38": "Apple",
+                    
+                    # Google devices
+                    "00:0D:6F": "Google",
+                    "AC:23:3F": "Google",
+                    "B0:49:5F": "Google",
+                    "70:3A:CB": "Google",
+                    "94:EB:2C": "Google",
+                    "30:FD:38": "Google",
+                    "A4:77:33": "Google",
+                    "48:D6:D5": "Google",
+                    "54:60:09": "Google",
+                    "9C:D3:32": "Google",
+                    "F4:F5:D8": "Google",
+                    "F4:F5:E8": "Google",
+                    "38:FC:98": "Google",
+                    "3C:5A:B4": "Google",
+                    "94:4A:0C": "Google",
+                    
+                    # Philips devices
+                    "00:17:88": "Philips",
+                    "EC:B5:FA": "Philips",
+                    "00:05:4B": "Philips",
+                    "00:17:88": "Philips",
+                    "24:C3:F9": "Philips",
+                    "70:AF:24": "Philips",
+                    "74:81:14": "Philips",
+                    "7C:6D:F8": "Philips",
+                    "A0:E9:DB": "Philips",
+                    
+                    # Samsung devices
+                    "00:15:99": "Samsung",
+                    "00:12:47": "Samsung",
+                    "00:15:B9": "Samsung",
+                    "00:17:C9": "Samsung",
+                    "00:17:D5": "Samsung",
+                    "00:18:AF": "Samsung",
+                    "00:1A:8A": "Samsung",
+                    "00:1B:98": "Samsung",
+                    "00:1C:43": "Samsung",
+                    "00:1D:25": "Samsung",
+                    "00:1D:F6": "Samsung",
+                    "00:1E:7D": "Samsung",
+                    "00:21:19": "Samsung",
+                    "00:23:39": "Samsung",
+                    "00:23:D6": "Samsung",
+                    "00:23:D7": "Samsung",
+                    "00:24:54": "Samsung",
+                    "00:24:90": "Samsung",
+                    "00:24:91": "Samsung",
+                    "00:24:E9": "Samsung",
+                    "00:25:38": "Samsung",
+                    "00:25:66": "Samsung",
+                    "00:25:67": "Samsung",
+                    "00:26:37": "Samsung",
+                    "00:26:5D": "Samsung",
+                    "00:26:5F": "Samsung",
+                    "00:26:E8": "Samsung",
+                    
+                    # Xiaomi devices
+                    "00:EC:0A": "Xiaomi",
+                    "04:CF:8C": "Xiaomi",
+                    "0C:1D:AF": "Xiaomi",
+                    "10:2A:B3": "Xiaomi",
+                    "14:F6:5A": "Xiaomi",
+                    "18:59:36": "Xiaomi",
+                    "20:82:C0": "Xiaomi",
+                    "28:6C:07": "Xiaomi",
+                    "28:E3:1F": "Xiaomi",
+                    "34:80:B3": "Xiaomi",
+                    "34:CE:00": "Xiaomi",
+                    "38:A4:ED": "Xiaomi",
+                    "3C:BD:3E": "Xiaomi",
+                    "4C:49:E3": "Xiaomi",
+                    "4C:63:EB": "Xiaomi",
+                    "50:64:2B": "Xiaomi",
+                    "50:8F:4C": "Xiaomi",
+                    "58:44:98": "Xiaomi",
+                    "64:09:80": "Xiaomi",
+                    "64:B4:73": "Xiaomi",
+                    "64:CC:2E": "Xiaomi",
+                    "68:DF:DD": "Xiaomi",
+                    "74:23:44": "Xiaomi",
+                    "74:51:BA": "Xiaomi",
+                    "74:DF:BF": "Xiaomi",
+                    "78:11:DC": "Xiaomi",
+                    "78:1D:BA": "Xiaomi",
+                    "7C:1D:D9": "Xiaomi",
+                    "7C:49:EB": "Xiaomi",
+                    "8C:BE:BE": "Xiaomi",
+                    "98:FA:E3": "Xiaomi",
+                    "9C:99:A0": "Xiaomi",
+                    "A0:41:A7": "Xiaomi",
+                    "A4:C1:38": "Xiaomi",
+                    "A4:E1:3D": "Xiaomi",
+                    "AC:C1:EE": "Xiaomi",
+                    "AC:F7:F3": "Xiaomi",
+                    "B0:E2:35": "Xiaomi",
+                    "C4:0B:CB": "Xiaomi",
+                    "C4:6A:B7": "Xiaomi",
+                    "D4:97:0B": "Xiaomi",
+                    "F0:B4:29": "Xiaomi",
+                    "F8:A4:5F": "Xiaomi",
+                    "FC:64:BA": "Xiaomi",
+                    
+                    # Fitbit devices
+                    "00:26:7E": "Fitbit",
+                    "20:D6:07": "Fitbit",
+                    "20:91:48": "Fitbit",
+                    "28:6A:B8": "Fitbit",
+                    "28:6A:BA": "Fitbit",
+                    "38:0B:40": "Fitbit",
+                    
+                    # Smart home devices
+                    "B0:47:BF": "EcoBee",
+                    "44:D4:19": "Nest",
+                    "18:B4:30": "Nest",
+                    "64:16:66": "Nest",
+                    "00:D0:2D": "Ring",
+                    "0C:47:C9": "Amazon",
+                    "4C:B5:31": "Sonos",
+                    "5C:AA:FD": "Sonos",
+                    "00:0E:58": "Sonos",
+                    "94:9F:3E": "Sonos",
+                    "B8:E9:37": "Sonos",
+                    
+                    # Wearables
+                    "BC:6A:29": "Garmin",
+                    "00:87:01": "Garmin",
+                    "10:13:EE": "Garmin",
+                    "98:54:1B": "Garmin",
+                    "38:16:D1": "Samsung Gear",
+                    "40:0E:85": "Samsung Gear",
+                    "60:F1:89": "Fossil",
+                    "60:33:4B": "Fossil",
+                    
+                    # Health devices
+                    "A4:C1:38": "Omron",
+                    "00:1C:05": "Nonin",
+                    "00:0D:84": "Withings"
+                }
+                
+                # Device types based on manufacturer
+                DEVICE_TYPES = {
+                    "Apple": "Apple Device",
+                    "Google": "Google Device",
+                    "Philips": "Philips Hue",
+                    "Samsung": "Samsung Device",
+                    "Xiaomi": "Xiaomi Device",
+                    "Fitbit": "Fitness Tracker",
+                    "EcoBee": "Smart Thermostat",
+                    "Nest": "Smart Thermostat",
+                    "Ring": "Smart Doorbell",
+                    "Amazon": "Smart Speaker",
+                    "Sonos": "Smart Speaker",
+                    "Garmin": "Fitness Device",
+                    "Samsung Gear": "Smartwatch",
+                    "Fossil": "Smartwatch",
+                    "Omron": "Health Device",
+                    "Nonin": "Health Device",
+                    "Withings": "Health Device"
+                }
+                
+                # Try to identify manufacturer from MAC prefix (first 3 bytes)
+                mac_prefix = mac.upper()[:8]
+                manufacturer = "Unknown"
+                device_type = "Unknown"
+                
+                if mac_prefix in MANUFACTURERS:
+                    manufacturer = MANUFACTURERS[mac_prefix]
+                    device_type = DEVICE_TYPES.get(manufacturer, "Unknown Device")
+                
+                # Device type classification based on advertisement data
+                if adv_data:
+                    try:
+                        adv_data_str = str(adv_data).lower()
+                        if any(term in adv_data_str for term in ["temp", "temperature", "celsius", "fahrenheit"]):
+                            device_type = "Temperature Sensor"
+                        elif any(term in adv_data_str for term in ["humid", "humidity"]):
+                            device_type = "Humidity Sensor"
+                        elif any(term in adv_data_str for term in ["motion", "pir", "movement"]):
+                            device_type = "Motion Sensor"
+                        elif any(term in adv_data_str for term in ["door", "window", "contact"]):
+                            device_type = "Contact Sensor"
+                        elif any(term in adv_data_str for term in ["button", "remote", "switch"]):
+                            device_type = "Button/Remote"
+                        elif any(term in adv_data_str for term in ["light", "lamp", "bulb"]):
+                            device_type = "Light"
+                        elif any(term in adv_data_str for term in ["lock", "secure"]):
+                            device_type = "Smart Lock"
+                        elif any(term in adv_data_str for term in ["scale", "weight"]):
+                            device_type = "Scale"
+                        elif any(term in adv_data_str for term in ["watch", "band"]):
+                            device_type = "Wearable"
+                        elif any(term in adv_data_str for term in ["speaker", "audio"]):
+                            device_type = "Audio Device"
+                    except:
+                        pass
                 
                 # Create device entry
                 device_entry = {
@@ -842,7 +1190,7 @@ def collect_system_diagnostics():
     """
     diagnostics = {
         "timestamp": datetime.now().isoformat(),
-        "version": "1.3.6",  # Make sure to update this when changing versions
+        "version": "1.4.0",  # Make sure to update this when changing versions
         "python_version": ".".join(map(str, sys.version_info[:3])),
         "platform": sys.platform,
         "environment": {}
@@ -891,11 +1239,121 @@ def collect_system_diagnostics():
         logging.error(f"Error saving diagnostics: {e}")
         return diagnostics
 
+def determine_adaptive_scan_interval(base_interval, devices, activity_level):
+    """
+    Adaptively determine the scan interval based on device activity and time of day.
+    
+    Args:
+        base_interval: The configured base interval in seconds
+        devices: List of discovered devices
+        activity_level: Current activity level (0-100, where 100 is high activity)
+        
+    Returns:
+        Adjusted scan interval in seconds
+    """
+    # Get current hour (0-23)
+    current_hour = datetime.now().hour
+    
+    # Night time hours (typically less activity)
+    night_mode = 0 <= current_hour < 6 or 22 <= current_hour < 24
+    
+    # Number of devices above RSSI threshold (stronger signal)
+    strong_signal_devices = len([d for d in devices if d.get("rssi", -100) > -75])
+    
+    # Device movement detected (large change in RSSI)
+    device_movement = False
+    for device in devices:
+        # Check if we have a previous reading to compare with
+        mac = device.get("mac_address")
+        rssi = device.get("rssi", -100)
+        
+        if not hasattr(determine_adaptive_scan_interval, "previous_rssi"):
+            determine_adaptive_scan_interval.previous_rssi = {}
+        
+        if mac in determine_adaptive_scan_interval.previous_rssi:
+            prev_rssi = determine_adaptive_scan_interval.previous_rssi[mac]
+            # If RSSI changed by more than 10 dBm, consider it movement
+            if abs(prev_rssi - rssi) > 10:
+                device_movement = True
+        
+        # Update previous RSSI
+        determine_adaptive_scan_interval.previous_rssi[mac] = rssi
+    
+    # Calculate the adaptive interval
+    if night_mode and activity_level < 30 and not device_movement:
+        # Slower scanning at night when activity is low
+        multiplier = 2.5
+    elif device_movement or activity_level > 70:
+        # Faster scanning when devices are moving or activity is high
+        multiplier = 0.5
+    elif strong_signal_devices > 5:
+        # Moderate scanning when many strong devices are present
+        multiplier = 0.75
+    else:
+        # Normal scanning for average conditions
+        multiplier = 1.0
+    
+    # Apply the multiplier but limit within reasonable bounds
+    # Minimum 10 seconds, maximum 3x the base interval
+    adjusted_interval = max(10, min(base_interval * multiplier, base_interval * 3))
+    
+    logging.debug(f"Adaptive scanning: Adjusted interval={adjusted_interval:.0f}s " +
+                 f"(base={base_interval}s, multiplier={multiplier:.2f}, " +
+                 f"night_mode={night_mode}, activity={activity_level})")
+    
+    return int(adjusted_interval)
+
+def get_home_assistant_activity_level():
+    """
+    Determine Home Assistant activity level by checking recent state changes.
+    Returns activity level from 0-100 (where 100 is high activity).
+    """
+    try:
+        # Use Supervisor token for authentication
+        headers = {
+            "Authorization": f"Bearer {os.environ.get('SUPERVISOR_TOKEN', '')}",
+            "Content-Type": "application/json"
+        }
+        
+        # Get history for the last 15 minutes for common activity entities
+        fifteen_minutes_ago = (datetime.now() - datetime.timedelta(minutes=15)).isoformat()
+        
+        # Try to get state changes history
+        response = requests.get(
+            "http://supervisor/core/api/history/period/" + fifteen_minutes_ago,
+            headers=headers,
+            params={
+                "filter_entity_id": "binary_sensor.motion,binary_sensor.presence,light.living_room,binary_sensor.door_front"
+            }
+        )
+        
+        if response.status_code >= 200 and response.status_code < 300:
+            history = response.json()
+            
+            # Count state changes as a measure of activity
+            total_changes = 0
+            for entity_history in history:
+                if entity_history:
+                    # Each item in entity_history is a state
+                    total_changes += len(entity_history) - 1  # -1 because we're counting changes, not states
+            
+            # Scale to 0-100
+            # 0 changes = 0 activity
+            # 20+ changes in 15 minutes = 100 activity
+            activity_level = min(100, (total_changes / 20) * 100)
+            return activity_level
+    
+    except Exception as e:
+        logging.debug(f"Error getting activity level: {e}")
+    
+    # Default to medium activity if we can't determine
+    return 50
+
 def main(log_level, scan_interval, gateway_topic=DEFAULT_GATEWAY_TOPIC):
     """Main discovery loop."""
     setup_logging(log_level)
     
-    logging.info(f"Enhanced BLE Discovery Add-on started. Scanning every {scan_interval} seconds.")
+    logging.info(f"Enhanced BLE Discovery Add-on started. Base scanning interval: {scan_interval} seconds.")
     
     # Collect diagnostic information
     diagnostics = collect_system_diagnostics()
@@ -913,15 +1371,21 @@ def main(log_level, scan_interval, gateway_topic=DEFAULT_GATEWAY_TOPIC):
     
     create_home_assistant_notification(
         "BLE Discovery Add-on",
-        "BLE Discovery Add-on has started. Use the BLE Dashboard to manage devices.",
+        "BLE Discovery Add-on has started with adaptive scanning. Use the BLE Dashboard to manage devices.",
         "ble_discovery_startup"
     )
     
     # Track manual scan requests
     last_manual_scan_check = 0
     
+    # Track discovered devices for adaptive scanning
+    last_devices = []
+    
     while True:
         try:
+            # Get current system activity level
+            activity_level = get_home_assistant_activity_level()
+            
             # Regular discovery
             discovered_devices = discover_ble_devices()
             logging.info(f"Regular scan complete. Total discovered devices: {len(discovered_devices)}")
@@ -938,7 +1402,10 @@ def main(log_level, scan_interval, gateway_topic=DEFAULT_GATEWAY_TOPIC):
                     "attributes": {
                         "friendly_name": "BLE Gateway",
                         "icon": "mdi:bluetooth-connect",
-                        "devices": discovered_devices
+                        "devices": discovered_devices,
+                        "last_scan": datetime.now().isoformat(),
+                        "adaptive_scan": True,
+                        "activity_level": activity_level
                     }
                 }
                 
@@ -948,11 +1415,47 @@ def main(log_level, scan_interval, gateway_topic=DEFAULT_GATEWAY_TOPIC):
                     json=sensor_data
                 )
             
+            # Update last_devices for next adaptive interval calculation
+            last_devices = discovered_devices
+            
+            # Calculate adaptive scan interval for next cycle
+            adaptive_interval = determine_adaptive_scan_interval(
+                scan_interval, 
+                last_devices,
+                activity_level
+            )
+            
+            # Create a sensor to show current scan settings
+            try:
+                sensor_data = {
+                    "state": adaptive_interval,
+                    "attributes": {
+                        "friendly_name": "BLE Scan Interval",
+                        "icon": "mdi:timer-outline",
+                        "unit_of_measurement": "seconds",
+                        "base_interval": scan_interval,
+                        "activity_level": activity_level,
+                        "device_count": len(discovered_devices),
+                        "adaptive_enabled": True
+                    }
+                }
+                
+                requests.post(
+                    "http://supervisor/core/api/states/sensor.ble_scan_interval",
+                    headers=headers,
+                    json=sensor_data
+                )
+            except Exception as e:
+                logging.debug(f"Error updating scan interval sensor: {e}")
+            
         except Exception as e:
             logging.error(f"Discovery error: {e}")
+            # Use base interval on errors
+            adaptive_interval = scan_interval
         
-        # Sleep between scans
-        time.sleep(scan_interval)
+        # Sleep between scans using adaptive interval
+        logging.debug(f"Sleeping for {adaptive_interval} seconds before next scan")
+        time.sleep(adaptive_interval)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Enhanced BLE Device Discovery")

@@ -34,6 +34,15 @@ input_select:
     options:
       - presence
       - temperature
+      - humidity
+      - motion
+      - contact
+      - button
+      - light
+      - lock
+      - scale
+      - wearable
+      - speaker
       - other
     initial: presence
     icon: mdi:devices

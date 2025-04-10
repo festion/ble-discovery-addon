@@ -10,9 +10,12 @@ This Home Assistant add-on provides advanced Bluetooth Low Energy (BLE) device d
 - Signal strength testing for optimal threshold setting
 - Easy device addition to Home Assistant
 - Persistent device tracking
-- Configurable scan intervals
-- Automatic MAC address formatting
-- Device categorization
+- Adaptive scan intervals based on time of day and activity
+- Enhanced device type detection with extensive MAC address database
+- Automatic device categorization based on advertisement data
+- Energy-efficient operation
+- Comprehensive device categorization with 12 device types
+- Advanced device identification
 
 ## Compatibility
 This add-on is designed to work with:
@@ -63,5 +66,80 @@ gateway_topic: BTLE
   - Try different placements of your BLE gateway
   - Consider multiple gateways for better coverage
 
+## New Features in v1.4.0
+
+### Adaptive Scanning
+The add-on now includes an intelligent adaptive scanning system that automatically adjusts scan intervals based on:
+- Time of day (slower scans at night, faster during active hours)
+- Home Assistant activity level
+- Device movement detection (based on RSSI changes)
+- Number of strong-signal devices present
+
+This results in:
+- Lower energy consumption
+- Reduced network traffic
+- Higher responsiveness when needed
+- Longer battery life for host systems
+
+### Enhanced Device Identification
+The add-on now features:
+- Comprehensive database of 200+ device manufacturer MAC prefixes
+- Automatic device type detection from advertisement data
+- Classification into 12 specific device categories:
+  - Presence devices
+  - Temperature sensors
+  - Humidity sensors
+  - Motion sensors
+  - Contact sensors
+  - Buttons/remotes
+  - Lights
+  - Smart locks
+  - Scales
+  - Wearables
+  - Speakers
+  - Other devices
+
+### Monitoring
+- New sensor.ble_scan_interval entity showing current scan settings
+- Enhanced BLE Gateway sensor with additional metadata
+- Improved diagnostic information and logging
+
 ## Support
 For issues, questions, or feature requests, please open an issue on GitHub.
+## New Features in v1.4.0
+
+### Adaptive Scanning
+The add-on now includes an intelligent adaptive scanning system that automatically adjusts scan intervals based on:
+- Time of day (slower scans at night, faster during active hours)
+- Home Assistant activity level
+- Device movement detection (based on RSSI changes)
+- Number of strong-signal devices present
+
+This results in:
+- Lower energy consumption
+- Reduced network traffic
+- Higher responsiveness when needed
+- Longer battery life for host systems
+
+### Enhanced Device Identification
+The add-on now features:
+- Comprehensive database of 200+ device manufacturer MAC prefixes
+- Automatic device type detection from advertisement data
+- Classification into 12 specific device categories:
+  - Presence devices
+  - Temperature sensors
+  - Humidity sensors
+  - Motion sensors
+  - Contact sensors
+  - Buttons/remotes
+  - Lights
+  - Smart locks
+  - Scales
+  - Wearables
+  - Speakers
+  - Other devices
+
+### Monitoring
+- New sensor.ble_scan_interval entity showing current scan settings
+- Enhanced BLE Gateway sensor with additional metadata
+- Improved diagnostic information and logging

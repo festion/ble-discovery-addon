@@ -101,6 +101,15 @@ if [ ! -f "/config/input_text.yaml" ] || ! grep -q "discovered_ble_devices" "/co
             echo "    options:" >> /config/configuration.yaml
             echo "      - presence" >> /config/configuration.yaml
             echo "      - temperature" >> /config/configuration.yaml
+            echo "      - humidity" >> /config/configuration.yaml
+            echo "      - motion" >> /config/configuration.yaml
+            echo "      - contact" >> /config/configuration.yaml
+            echo "      - button" >> /config/configuration.yaml
+            echo "      - light" >> /config/configuration.yaml
+            echo "      - lock" >> /config/configuration.yaml
+            echo "      - scale" >> /config/configuration.yaml
+            echo "      - wearable" >> /config/configuration.yaml
+            echo "      - speaker" >> /config/configuration.yaml
             echo "      - other" >> /config/configuration.yaml
             echo "    initial: presence" >> /config/configuration.yaml
             echo "    icon: mdi:devices" >> /config/configuration.yaml
