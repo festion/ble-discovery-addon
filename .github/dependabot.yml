@@ -1,0 +1,14 @@
+# Managed centrally: grouped minor/patch, monthly, to keep PR volume low.
+# Regenerate rather than hand-editing if the manifest layout changes.
+version: 2
+updates:
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
