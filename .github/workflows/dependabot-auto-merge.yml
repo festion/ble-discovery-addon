@@ -1,0 +1,31 @@
+name: Dependabot auto-merge
+
+# Auto-merges Dependabot patch/minor PRs once the branch-protection required
+# status checks pass. Major version bumps are left for manual review. `--auto`
+# arms the merge but GATES it on those checks, so a failing test never merges.
+# Merge uses DEPENDABOT_AUTOMERGE_TOKEN (a Dependabot secret), not GITHUB_TOKEN,
+# so the push to the default branch triggers downstream deploy workflows.
+
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dependabot-auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Enable auto-merge for patch and minor updates
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_TOKEN }}
