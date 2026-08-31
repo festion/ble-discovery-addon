@@ -1,0 +1,79 @@
+name: CI
+
+# ops #2765: this repo had no build or test verification of any kind. Its only
+# workflows were secret-scan.yml and dependabot-auto-merge.yml — neither of which
+# checks that the add-on still runs. With no required status checks configured on
+# main, `gh pr merge --auto` has nothing to wait for, so a Dependabot patch/minor
+# PR would merge completely unverified.
+#
+# The bar here is the one that card sets: "does it still start", not coverage.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # ble_discovery.py imports `requests`; the add-on installs it at RUNTIME in
+      # run.sh, not at build time, so CI has to install it to mirror the real env.
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pytest
+      - name: Syntax-check every module
+        run: python -m compileall -q .
+      - name: Import the add-on entry point
+        run: python -c "import ble_discovery; print('import OK')"
+      - name: Validate add-on manifests
+        run: |
+          python - <<'PY'
+          import json
+          for f in ("config.json", "repository.json"):
+              json.load(open(f))
+              print("OK", f)
+          PY
+      - name: Run the existing unit tests
+        # test_ble_discovery.py has been in this repo unrun since it was written.
+        run: python -m pytest test_ble_discovery.py -q
+
+  image:
+    name: Add-on image builds and starts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the add-on image
+        run: docker build --platform linux/amd64 -t ble-discovery-addon:ci .
+      # A successful `docker build` is NOT sufficient on its own: a base-image
+      # major bump can build cleanly and still break the add-on at start. These
+      # three assertions cover what run.sh actually depends on.
+      - name: bashio functions run.sh calls are present
+        run: |
+          docker run --rm --platform linux/amd64 --entrypoint bash \
+            ble-discovery-addon:ci -c '
+              source /usr/lib/bashio/bashio.sh
+              for f in bashio::config bashio::log.info bashio::log.warning; do
+                declare -F "$f" >/dev/null || { echo "MISSING: $f"; exit 1; }
+                echo "present: $f"
+              done'
+      - name: run.sh dependency install still works in the image
+        # run.sh does `pip3 install requests` at start. On newer Alpine/Python this
+        # is where PEP 668 ("externally-managed-environment") would bite, and a
+        # build-only check would never see it.
+        run: |
+          docker run --rm --platform linux/amd64 --entrypoint sh \
+            ble-discovery-addon:ci -c 'pip3 install --no-cache-dir requests'
+      - name: Entry point is present and executable
+        run: |
+          docker run --rm --platform linux/amd64 --entrypoint sh \
+            ble-discovery-addon:ci -c 'test -x /run.sh && echo "/run.sh ok"'
