@@ -1,8 +1,30 @@
 name: Dependabot auto-merge
 
 # Auto-merges Dependabot patch/minor PRs once the branch-protection required
-# status checks pass. Major version bumps are left for manual review. `--auto`
-# arms the merge but GATES it on those checks, so a failing test never merges.
+# status checks pass. Major version bumps are left for manual review. `--auto` ARMS the merge and waits ONLY for
+# checks the branch actually REQUIRES.
+#
+# ⚠ THIS FILE CANNOT MAKE THAT SAFE BY ITSELF. With no required status checks
+# configured there is nothing for `--auto` to wait for, and the merge lands
+# while CI is still running. Measured on model-catalog #28 (2026-08-28): opened
+# 13:05:57Z, MERGED 13:06:09Z, its Test finished 13:06:44Z -- 35s after the
+# merge. The test passed; it passed too late to matter.
+#
+# Verify THIS repo before trusting the sentence above -- rulesets and classic
+# branch protection are separate surfaces, and this reads the effective rules
+# of both:
+#
+#   gh api repos/festion/<repo>/rules/branches/main \
+#     --jq '[.[]|select(.type=="required_status_checks")
+#            |.parameters.required_status_checks[].context]'
+#
+# Empty output means this workflow merges bumps without waiting for anything.
+#
+# ⚠ And "required" is not "tested". Requiring only a secret scanner closes the
+# timing race but not the semantic one: a bump that breaks the suite still
+# merges, it just merges later. For "a failing test never merges" to be true the
+# TEST job must be required -- and must NOT be path-filtered, or a PR that
+# misses the filter stays blocked forever. (ops #3500)
 # Merge uses DEPENDABOT_AUTOMERGE_TOKEN (a Dependabot secret), not GITHUB_TOKEN,
 # so the push to the default branch triggers downstream deploy workflows.
 
